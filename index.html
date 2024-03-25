@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Video Mask Effect with WebGL</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Предотвращает возможные полосы прокрутки */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+        }
+        .canvas-container {
+            position: fixed; /* Используется fixed вместо relative для покрытия всего экрана */
+            top: 0;
+            left: 0;
+            width: 100vw; /* Ширина вьюпорта */
+            height: 100vh; /* Высота вьюпорта */
+        }
+        #webglCanvas {
+            width: 100%;
+            height: 100%;
+        }
+        #playPauseBtn, #colorPicker {
+            position: absolute;
+            z-index: 10; /* Убедитесь, что элементы всплывут над канвасом */
+            top: 10px; /* Однородный внешний отступ для этих элементов */
+            margin: 5px;
+        }
+        #colorPicker {
+            right: 10px;
+        }
+    </style>
+    
+</head>
+<body>
+
+<div class="canvas-container">
+    <video id="videoElement" src="VideoMerge2.mp4" playsinline webkit-playsinline muted hidden crossOrigin="anonymous"></video>
+
+    <input type="color" id="colorPicker" value="#0000ff"/>
+    <button id="playPauseBtn">Play</button>
+
+    <canvas id="webglCanvas" width="1000" height="1000"></canvas>
+</div>
+
+<script src="webgl.js"></script>
+
+</body>
+</html>
