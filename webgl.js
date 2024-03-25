@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let targetColor = [0.0, 0.0, 1.0, 1.0]; // Синий по умолчанию
     
     let intervalID; // Для хранения ID интервала
+    
 
     const W = 1000; // Примерная ширина, желательно соответствующая размеру видео
     const H = 1000; // Примерная высота, желательно соответствующая размеру видео
@@ -31,22 +32,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         void main() {
             vec2 uv = vTexCoord.xy;
-            vec2 maskUv = vec2(uv.x * 0.5, uv.y * 0.333);
-            vec2 adjustedUv = vec2(uv.x, uv.y * 0.666 +0.333);
-            
-            vec4 originalColor = texture2D(uSampler, adjustedUv);
-            vec4 maskColor = texture2D(uSampler, maskUv);
-            gl_FragColor = vec4(originalColor.rgb, originalColor.a );
-
-            float maskAlpha = (maskColor.r + maskColor.g + maskColor.b) / 3.0;
-            maskAlpha = 1.0 - maskAlpha;
-
-            if(maskColor.r < 0.5 && maskColor.g < 0.5 && maskColor.b < 0.5) {
-                gl_FragColor = vec4(originalColor.rgb, originalColor.a);
-            } else {
-                vec4 multiplyColor = originalColor * targetColor;
-                gl_FragColor = vec4(multiplyColor.rgb, originalColor.a * targetColor.a * maskAlpha);
-            }
+            // Упрощаем выражения для UV-координат, рассчитывая их один раз
+            vec2 maskUv = uv * vec2(0.5, 0.3333); // UV для маски
+            vec2 adjustedUv = uv * vec2(1.0, 0.6666) + vec2(0.0, 0.3333); // UV для основного изображения
+        
+            vec4 originalColor = texture2D(uSampler, adjustedUv); // Получаем базовый (оригинальный) цвет
+            vec4 maskColor = texture2D(uSampler, maskUv); // Получаем цвет маски
+        
+            float maskAlpha = maskColor.g; // Используем зеленый канал маски для альфа-значения
+        
+            // Упрощаем выражения вычисления общего цвета
+            gl_FragColor = originalColor * mix(vec4(1.0), targetColor, maskAlpha);
         }
     `;
     
@@ -88,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-        updateTexture();
+        // Первоначальное заполнение текстуры убрано
     }
 
     function updateTexture() {
@@ -100,6 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     function render() {
+        gl.viewport(0, 0, canvas.width, canvas.height);
         updateTexture();
         if (!shaderProgram || !videoTexture) return;
 
@@ -122,43 +119,68 @@ document.addEventListener('DOMContentLoaded', function() {
 
     initShaders();
     initTexture();
-    
+
     function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        let windowRatio = window.innerWidth / window.innerHeight;
+        let videoRatio = W / H;
+    
+        if (windowRatio < videoRatio) {
+            // Высота окна является ограничивающим фактором
+            canvas.height = window.innerHeight;
+            canvas.width = canvas.height * videoRatio;
+        } else {
+            // Ширина окна является ограничивающим фактором
+            canvas.width = window.innerWidth;
+            canvas.height = canvas.width / videoRatio;
+        }
+    
+        // Центрируем canvas
+        canvas.style.position = "absolute";
+        canvas.style.left = (window.innerWidth - canvas.width) / 2 + 'px';
+        canvas.style.top = (window.innerHeight - canvas.height) / 2 + 'px';
+    
+        gl.viewport(0, 0, canvas.width, canvas.height); // Настройка вьюпорта WebGL
+        render();
     }
+    
     
     window.onload = resizeCanvas;
     window.onresize = resizeCanvas;
 
-    video.addEventListener('play', () => {
+    video.addEventListener('play', function() {
+        function renderLoop(){
+            if (!video.paused && !video.ended) {
+                render();
+                requestAnimationFrame(renderLoop);
+            }
+        }
+
         updateTexture();
         render();
+        animFrameId = requestAnimationFrame(renderLoop); // Заменили setInterval на requestAnimationFrame
     });
 
     document.getElementById('playPauseBtn').addEventListener('click', function() {
         if (video.paused) {
             video.play();
             this.textContent = 'Pause';
-            startRenderingLoop(); // Запускаем отрисовку здесь
+            // startRenderingLoop удален, так как логика перенесена в 'play' обработчик
         } else {
             video.pause();
             this.textContent = 'Play';
-            clearInterval(intervalID); // Останавливаем отрисовку
+            cancelAnimationFrame(animFrameId); // Останавливаем цикл анимации
         }
     });
 
-    function startRenderingLoop() {
-        clearInterval(intervalID); // Удаляем существующий интервал, если он есть
-        intervalID = setInterval(render, 16); // Запускаем новый интервал
-    }
+    
+function hexToRGBA(hex) {
+    let r = parseInt(hex.slice(1, 3), 16),
+        g = parseInt(hex.slice(3, 5), 16),
+        b = parseInt(hex.slice(5, 7), 16);
+    return [r / 255, g / 255, b / 255, 1];
+}
 
-    function hexToRGBA(hex) {
-        let r = parseInt(hex.slice(1, 3), 16),
-            g = parseInt(hex.slice(3, 5), 16),
-            b = parseInt(hex.slice(5, 7), 16);
-        return [r / 255, g / 255, b / 255, 1];
-    }
+
 
     function setupBuffersAndAttributes() {
         const vertices = new Float32Array([
