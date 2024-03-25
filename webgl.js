@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let targetColor = [0.0, 0.0, 1.0, 1.0]; // Синий по умолчанию
     
+    let intervalID; // Для хранения ID интервала
+
     const W = 1000; // Примерная ширина, желательно соответствующая размеру видео
     const H = 1000; // Примерная высота, желательно соответствующая размеру видео
 
@@ -29,8 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         void main() {
             vec2 uv = vTexCoord.xy;
-            vec2 maskUv = vec2(uv.x, uv.y * 0.5);
-            vec2 adjustedUv = vec2(uv.x, uv.y * 0.5 + 0.5);
+            vec2 maskUv = vec2(uv.x * 0.5, uv.y * 0.333);
+            vec2 adjustedUv = vec2(uv.x, uv.y * 0.666 +0.333);
             
             vec4 originalColor = texture2D(uSampler, adjustedUv);
             vec4 maskColor = texture2D(uSampler, maskUv);
@@ -116,13 +118,6 @@ document.addEventListener('DOMContentLoaded', function() {
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
-    function startRenderingLoop() {
-        if (!video.paused) {
-          requestAnimationFrame(startRenderingLoop);
-        }
-        render();
-      }
-    
     colorPicker.addEventListener('input', render);
 
     initShaders();
@@ -133,26 +128,30 @@ document.addEventListener('DOMContentLoaded', function() {
         canvas.height = window.innerHeight;
     }
     
-    // Вызовите функцию resizeCanvas при загрузке страницы и при изменении размера окна
     window.onload = resizeCanvas;
     window.onresize = resizeCanvas;
 
     video.addEventListener('play', () => {
         updateTexture();
         render();
-        
     });
 
     document.getElementById('playPauseBtn').addEventListener('click', function() {
         if (video.paused) {
-          video.play();
-          this.textContent = 'Pause';
+            video.play();
+            this.textContent = 'Pause';
+            startRenderingLoop(); // Запускаем отрисовку здесь
         } else {
-          video.pause();
-          this.textContent = 'Play';
+            video.pause();
+            this.textContent = 'Play';
+            clearInterval(intervalID); // Останавливаем отрисовку
         }
-        startRenderingLoop(); // Запускаем отрисовку здесь
-      });
+    });
+
+    function startRenderingLoop() {
+        clearInterval(intervalID); // Удаляем существующий интервал, если он есть
+        intervalID = setInterval(render, 16); // Запускаем новый интервал
+    }
 
     function hexToRGBA(hex) {
         let r = parseInt(hex.slice(1, 3), 16),
@@ -160,33 +159,27 @@ document.addEventListener('DOMContentLoaded', function() {
             b = parseInt(hex.slice(5, 7), 16);
         return [r / 255, g / 255, b / 255, 1];
     }
+
     function setupBuffersAndAttributes() {
-        // Определение вершин квадрата и инвертирование текстурных координат по оси Y
         const vertices = new Float32Array([
-            -1.0, -1.0, 0.0, 0.0, // Левый нижний угол
-             1.0, -1.0, 1.0, 0.0, // Правый нижний угол
-            -1.0,  1.0, 0.0, 1.0, // Левый верхний угол
-            -1.0,  1.0, 0.0, 1.0, // Левый верхний угол
-             1.0, -1.0, 1.0, 0.0, // Правый нижний угол
-             1.0,  1.0, 1.0, 1.0  // Правый верхний угол
+            -1.0, -1.0, 0.0, 0.0,
+             1.0, -1.0, 1.0, 0.0,
+            -1.0,  1.0, 0.0, 1.0,
+            -1.0,  1.0, 0.0, 1.0,
+             1.0, -1.0, 1.0, 0.0,
+             1.0,  1.0, 1.0, 1.0  
         ]);
         
-        // Создание буфера вершин и загрузка данных вершин
         const vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
         
-        // Получение и установка атрибута position
         const positionLoc = gl.getAttribLocation(shaderProgram, "position");
         gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 4 * 4, 0);
         gl.enableVertexAttribArray(positionLoc);
         
-        // Получение и установка атрибута texCoord
         const texCoordLoc = gl.getAttribLocation(shaderProgram, "texCoord");
         gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
         gl.enableVertexAttribArray(texCoordLoc);
     }
-    
-    
-
 });
