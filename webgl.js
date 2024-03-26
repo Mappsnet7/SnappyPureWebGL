@@ -1,19 +1,19 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const canvas = document.getElementById('webglCanvas');
     const gl = canvas.getContext('webgl');
     const video = document.getElementById('videoElement');
     const colorPicker = document.getElementById('colorPicker');
     let shaderProgram, videoTexture;
 
-    let targetColor = [0.0, 0.0, 1.0, 1.0]; // Синий по умолчанию
-    
-    let intervalID; // Для хранения ID интервала
-    
+    let targetColor = [0.0, 0.0, 1.0, 1.0]; // Blue by default
 
-    const W = 1000; // Примерная ширина, желательно соответствующая размеру видео
-    const H = 1000; // Примерная высота, желательно соответствующая размеру видео
+    let intervalID;
 
-    // Настройка шейдеров
+
+    const W = 1000;
+    const H = 1000;
+
+    // Setting up shaders
     const vertShaderSource = `
         attribute vec2 position;
         attribute vec2 texCoord;
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
             vTexCoord = texCoord;
         }
     `;
-    
+
     const fragShaderSource = `
         precision mediump float;
         varying vec2 vTexCoord;
@@ -32,20 +32,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         void main() {
             vec2 uv = vTexCoord.xy;
-            // Упрощаем выражения для UV-координат, рассчитывая их один раз
-            vec2 maskUv = uv * vec2(0.5, 0.3333); // UV для маски
-            vec2 adjustedUv = uv * vec2(1.0, 0.6666) + vec2(0.0, 0.3333); // UV для основного изображения
+
+            vec2 maskUv = uv * vec2(0.5, 0.3333); // UV for the mask
+            vec2 adjustedUv = uv * vec2(1.0, 0.6666) + vec2(0.0, 0.3333); // UV for the main image
         
-            vec4 originalColor = texture2D(uSampler, adjustedUv); // Получаем базовый (оригинальный) цвет
-            vec4 maskColor = texture2D(uSampler, maskUv); // Получаем цвет маски
+            vec4 originalColor = texture2D(uSampler, adjustedUv); // Get the base (original) color
+            vec4 maskColor = texture2D(uSampler, maskUv); // Get the color of the mask
         
-            float maskAlpha = maskColor.g; // Используем зеленый канал маски для альфа-значения
+            float maskAlpha = maskColor.g; // Use the green mask channel for the alpha value
         
-            // Упрощаем выражения вычисления общего цвета
             gl_FragColor = originalColor * mix(vec4(1.0), targetColor, maskAlpha);
         }
     `;
-    
+
     async function initShaders() {
         const vertShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertShader, vertShaderSource);
@@ -83,8 +82,6 @@ document.addEventListener('DOMContentLoaded', function() {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-        // Первоначальное заполнение текстуры убрано
     }
 
     function updateTexture() {
@@ -123,32 +120,32 @@ document.addEventListener('DOMContentLoaded', function() {
     function resizeCanvas() {
         let windowRatio = window.innerWidth / window.innerHeight;
         let videoRatio = W / H;
-    
+
         if (windowRatio < videoRatio) {
-            // Высота окна является ограничивающим фактором
+            // The height of the window is the limiting factor
             canvas.height = window.innerHeight;
             canvas.width = canvas.height * videoRatio;
         } else {
-            // Ширина окна является ограничивающим фактором
+            // The window width is the limiting factor
             canvas.width = window.innerWidth;
             canvas.height = canvas.width / videoRatio;
         }
-    
-        // Центрируем canvas
+
+        // Center the canvas
         canvas.style.position = "absolute";
         canvas.style.left = (window.innerWidth - canvas.width) / 2 + 'px';
         canvas.style.top = (window.innerHeight - canvas.height) / 2 + 'px';
-    
-        gl.viewport(0, 0, canvas.width, canvas.height); // Настройка вьюпорта WebGL
+
+        gl.viewport(0, 0, canvas.width, canvas.height); // Configuring the WebGL viewport
         render();
     }
-    
-    
+
+
     window.onload = resizeCanvas;
     window.onresize = resizeCanvas;
 
-    video.addEventListener('play', function() {
-        function renderLoop(){
+    video.addEventListener('play', function () {
+        function renderLoop() {
             if (!video.paused && !video.ended) {
                 render();
                 requestAnimationFrame(renderLoop);
@@ -157,49 +154,49 @@ document.addEventListener('DOMContentLoaded', function() {
 
         updateTexture();
         render();
-        animFrameId = requestAnimationFrame(renderLoop); // Заменили setInterval на requestAnimationFrame
+        animFrameId = requestAnimationFrame(renderLoop); // analog is setInterval
     });
 
-    document.getElementById('playPauseBtn').addEventListener('click', function() {
+    document.getElementById('playPauseBtn').addEventListener('click', function () {
         if (video.paused) {
             video.play();
             this.textContent = 'Pause';
-            // startRenderingLoop удален, так как логика перенесена в 'play' обработчик
+
         } else {
             video.pause();
             this.textContent = 'Play';
-            cancelAnimationFrame(animFrameId); // Останавливаем цикл анимации
+            cancelAnimationFrame(animFrameId);
         }
     });
 
-    
-function hexToRGBA(hex) {
-    let r = parseInt(hex.slice(1, 3), 16),
-        g = parseInt(hex.slice(3, 5), 16),
-        b = parseInt(hex.slice(5, 7), 16);
-    return [r / 255, g / 255, b / 255, 1];
-}
+
+    function hexToRGBA(hex) {
+        let r = parseInt(hex.slice(1, 3), 16),
+            g = parseInt(hex.slice(3, 5), 16),
+            b = parseInt(hex.slice(5, 7), 16);
+        return [r / 255, g / 255, b / 255, 1];
+    }
 
 
 
     function setupBuffersAndAttributes() {
         const vertices = new Float32Array([
             -1.0, -1.0, 0.0, 0.0,
-             1.0, -1.0, 1.0, 0.0,
-            -1.0,  1.0, 0.0, 1.0,
-            -1.0,  1.0, 0.0, 1.0,
-             1.0, -1.0, 1.0, 0.0,
-             1.0,  1.0, 1.0, 1.0  
+            1.0, -1.0, 1.0, 0.0,
+            -1.0, 1.0, 0.0, 1.0,
+            -1.0, 1.0, 0.0, 1.0,
+            1.0, -1.0, 1.0, 0.0,
+            1.0, 1.0, 1.0, 1.0
         ]);
-        
+
         const vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-        
+
         const positionLoc = gl.getAttribLocation(shaderProgram, "position");
         gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 4 * 4, 0);
         gl.enableVertexAttribArray(positionLoc);
-        
+
         const texCoordLoc = gl.getAttribLocation(shaderProgram, "texCoord");
         gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
         gl.enableVertexAttribArray(texCoordLoc);
