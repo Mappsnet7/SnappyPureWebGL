@@ -2,10 +2,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const canvas = document.getElementById('webglCanvas');
     const gl = canvas.getContext('webgl');
     const video = document.getElementById('videoElement');
-    const colorPicker = document.getElementById('colorPicker');
+    const colorPicker1 = document.getElementById('colorPicker1');
+    const colorPicker2 = document.getElementById('colorPicker2');
     let shaderProgram, videoTexture;
 
-    let targetColor = [0.0, 0.0, 1.0, 1.0]; // Blue by default
+    let targetColor1 = [1.0, 0.0, 0.0, 1.0]; // Blue by default
+
+    let targetColor2 = [0.0, 1.0, 0.0, 1.0]; // Blue by default
 
     let intervalID;
 
@@ -25,25 +28,34 @@ document.addEventListener('DOMContentLoaded', function () {
     `;
 
     const fragShaderSource = `
-        precision mediump float;
-        varying vec2 vTexCoord;
-        uniform sampler2D uSampler;
-        uniform vec4 targetColor;
-        
-        void main() {
-            vec2 uv = vTexCoord.xy;
+    precision mediump float;
+    varying vec2 vTexCoord;
+    uniform sampler2D uSampler;
+    uniform vec4 targetColor1;
+    uniform vec4 targetColor2;
 
-            vec2 maskUv = uv * vec2(0.5, 0.3333); // UV for the mask
-            vec2 adjustedUv = uv * vec2(1.0, 0.6666) + vec2(0.0, 0.3333); // UV for the main image
-        
-            vec4 originalColor = texture2D(uSampler, adjustedUv); // Get the base (original) color
-            vec4 maskColor = texture2D(uSampler, maskUv); // Get the color of the mask
-        
-            float maskAlpha = maskColor.g; // Use the green mask channel for the alpha value
-        
-            gl_FragColor = originalColor * mix(vec4(1.0), targetColor, maskAlpha);
-        }
-    `;
+    void main() {
+        vec2 uv = vTexCoord.xy;
+        vec2 maskUv = uv * vec2(0.5, 0.3333);
+        vec2 maskUvRight = uv * vec2(0.5, 0.3333) + vec2(0.5, 0.0);
+        vec2 adjustedUv = uv * vec2(1.0, 0.6666) + vec2(0.0, 0.3333);
+
+        vec4 originalColor = texture2D(uSampler, adjustedUv);
+        vec4 maskColor = texture2D(uSampler, maskUv);
+        vec4 maskColorRight = texture2D(uSampler, maskUvRight);
+
+        float maskAlpha1 = smoothstep(0.0, 0.8, maskColor.r) ;
+        float maskAlpha2 = smoothstep(0.0, 0.9, maskColorRight.r);
+
+        vec4 color1 = originalColor * targetColor1;
+        vec4 color2 = originalColor * targetColor2;
+
+        vec4 finalColor = mix(originalColor, color1, maskAlpha1);
+        finalColor = mix(finalColor, color2, maskAlpha2);
+
+        gl_FragColor = finalColor;
+    }
+`;
 
     async function initShaders() {
         const vertShader = gl.createShader(gl.VERTEX_SHADER);
@@ -106,13 +118,17 @@ document.addEventListener('DOMContentLoaded', function () {
         gl.bindTexture(gl.TEXTURE_2D, videoTexture);
         gl.uniform1i(gl.getUniformLocation(shaderProgram, 'uSampler'), 0);
 
-        const hexColor = hexToRGBA(colorPicker.value);
-        gl.uniform4f(gl.getUniformLocation(shaderProgram, 'targetColor'), hexColor[0], hexColor[1], hexColor[2], hexColor[3]);
+        const hexColor = hexToRGBA(colorPicker1.value);
+        gl.uniform4f(gl.getUniformLocation(shaderProgram, 'targetColor1'), hexColor[0], hexColor[1], hexColor[2], hexColor[3]);
+
+        const hexColor2 = hexToRGBA(colorPicker2.value);
+        gl.uniform4f(gl.getUniformLocation(shaderProgram, 'targetColor2'), hexColor2[0], hexColor2[1], hexColor2[2], hexColor2[3]);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
-    colorPicker.addEventListener('input', render);
+    colorPicker1.addEventListener('input', render);
+    colorPicker2.addEventListener('input', render);
 
     initShaders();
     initTexture();

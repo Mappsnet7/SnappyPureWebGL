@@ -21,14 +21,18 @@
             height: 100vh; 
         }
        
-        #playPauseBtn, #colorPicker {
+        #playPauseBtn, #colorPicker1,  #colorPicker2{
             position: absolute;
             z-index: 10; 
             top: 10px; 
             margin: 5px;
         }
-        #colorPicker {
+        #colorPicker1 {
             right: 10px;
+        }
+       
+        #colorPicker2 {
+            right: 60px;
         }
     </style>
     
@@ -38,7 +42,8 @@
 <div class="canvas-container">
     <video id="videoElement" src="VideoMerge4.mp4" playsinline loop webkit-playsinline muted hidden crossOrigin="anonymous"></video>
 
-    <input type="color" id="colorPicker" value="#0000ff"/>
+    <input type="color" id="colorPicker1" value="#3ACAFE"/>
+    <input type="color" id="colorPicker2" value="#3876B6"/>
     <button id="playPauseBtn">Play</button>
 
     <canvas id="webglCanvas" width="1000" height="1000"></canvas>
