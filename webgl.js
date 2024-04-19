@@ -6,9 +6,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const colorPicker2 = document.getElementById('colorPicker2');
     let shaderProgram, videoTexture;
 
-    let targetColor1 = [1.0, 0.0, 0.0, 1.0]; // Blue by default
+    let targetColor1 = [1.0, 0.0, 0.0, 1.0]; // Color 1
 
-    let targetColor2 = [0.0, 1.0, 0.0, 1.0]; // Blue by default
+    let targetColor2 = [0.0, 1.0, 0.0, 1.0]; // Color 2
 
     let intervalID;
 
