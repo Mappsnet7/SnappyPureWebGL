@@ -44,14 +44,16 @@ document.addEventListener('DOMContentLoaded', function () {
         vec4 maskColor = texture2D(uSampler, maskUv);
         vec4 maskColorRight = texture2D(uSampler, maskUvRight);
 
-        float maskAlpha1 = smoothstep(0.0, 0.8, maskColor.r) ;
-        float maskAlpha2 = smoothstep(0.0, 0.9, maskColorRight.r);
+        float edgeWidth = 0.4;
+        float maskAlpha1 = smoothstep(0.0, 0.8, maskColor.r);
+        float maskAlpha2 = smoothstep(0.0, 0.7, maskColorRight.r);
 
         vec4 color1 = originalColor * targetColor1;
         vec4 color2 = originalColor * targetColor2;
 
         vec4 finalColor = mix(originalColor, color1, maskAlpha1);
         finalColor = mix(finalColor, color2, maskAlpha2);
+        
 
         gl_FragColor = finalColor;
     }
