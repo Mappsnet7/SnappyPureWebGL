@@ -48,9 +48,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     void main() {
         vec2 uv = vTexCoord.xy;
-        vec2 maskUv = uv * vec2(0.5, 0.3333);
-        vec2 maskUvRight = uv * vec2(0.5, 0.3333) + vec2(0.5, 0.0);
-        vec2 adjustedUv = uv * vec2(1.0, 0.6666) + vec2(0.0, 0.3333);
+        vec2 maskUv = uv * vec2(1.0, 0.3333);
+        vec2 maskUvRight = uv * vec2(1.0, 0.3333) + vec2(0.0, 0.3333);
+        vec2 adjustedUv = uv * vec2(1.0, 0.3333) + vec2(0.0, 0.6666);
     
         vec4 originalColor = texture2D(uSampler, adjustedUv);
         vec4 maskColor = texture2D(uSampler, maskUv);
@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Смешиваем finalColor и hardLightColor с 60% непрозрачностью
         finalColor = mix(finalColor, hardLightColor, 0.3);
 
+        //gl_FragColor = originalColor;
         gl_FragColor = finalColor;
     }
 `;
