@@ -33,30 +33,39 @@ document.addEventListener('DOMContentLoaded', function () {
     uniform sampler2D uSampler;
     uniform vec4 targetColor1;
     uniform vec4 targetColor2;
-
+    
+    vec4 multiply(vec4 base, vec4 blend) {
+        return vec4(base.rgb * blend.rgb, base.a);
+    }
+    
     void main() {
         vec2 uv = vTexCoord.xy;
         vec2 maskUv = uv * vec2(0.5, 0.3333);
         vec2 maskUvRight = uv * vec2(0.5, 0.3333) + vec2(0.5, 0.0);
         vec2 adjustedUv = uv * vec2(1.0, 0.6666) + vec2(0.0, 0.3333);
-
+    
         vec4 originalColor = texture2D(uSampler, adjustedUv);
         vec4 maskColor = texture2D(uSampler, maskUv);
         vec4 maskColorRight = texture2D(uSampler, maskUvRight);
-
-        float edgeWidth = 0.4;
-        float maskAlpha1 = smoothstep(0.0, 0.8, maskColor.r);
-        float maskAlpha2 = smoothstep(0.0, 0.7, maskColorRight.r);
-
-        vec4 color1 = originalColor * targetColor1;
-        vec4 color2 = originalColor * targetColor2;
-
+    
+        float maskAlpha1 = smoothstep(0.0, 1.0, maskColor.r);
+        float maskAlpha2 = smoothstep(0.0, 1.0, maskColorRight.r);
+    
+        float brightness = dot(originalColor.rgb, vec3(0.299, 0.587, 0.114)); // яркость
+        float reductionFactor = smoothstep(0.8, 1.0, brightness); // плавное уменьшение от 0.8 до 1.0
+    
+        maskAlpha1 = maskAlpha1 * mix(1.0, 0.5, reductionFactor);
+        maskAlpha2 = maskAlpha2 * mix(1.0, 0.5, reductionFactor);
+    
+        vec4 color1 = multiply(originalColor + 0.2, targetColor1);
+        vec4 color2 = multiply(originalColor + 0.2, targetColor2);
+    
         vec4 finalColor = mix(originalColor, color1, maskAlpha1);
         finalColor = mix(finalColor, color2, maskAlpha2);
-        
-
+    
         gl_FragColor = finalColor;
     }
+    
 `;
 
     async function initShaders() {
