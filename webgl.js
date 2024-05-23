@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Преобразование finalColor из RGB в HSL
         vec3 hslColor = rgb2hsl(finalColor.rgb);
         // Увеличение насыщенности на 30%
-        hslColor.y = clamp(hslColor.y * 1.3, 0.0, 1.0);
+        hslColor.y = clamp(hslColor.y * 2.0, 0.0, 1.0);
         // Преобразование обратно из HSL в RGB
         finalColor.rgb = hsl2rgb(hslColor);
     
