@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
     uniform sampler2D uSampler;
     uniform vec4 targetColor1;
     uniform vec4 targetColor2;
-
+    
     vec4 multiply(vec4 base, vec4 blend) {
         return vec4(base.rgb * blend.rgb, base.a);
     }
@@ -41,11 +41,74 @@ document.addEventListener('DOMContentLoaded', function () {
     vec4 hardLight(vec4 base, vec4 blend) {
         return vec4(mix(2.0 * base.rgb * blend.rgb, 1.0 - 2.0 * (1.0 - base.rgb) * (1.0 - blend.rgb), step(0.5, blend.rgb)), base.a);
     }
-
+    
     float luminance(vec4 color) {
         return 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
     }
-
+    
+    // Функция преобразования из RGB в HSL
+    vec3 rgb2hsl(vec3 color) {
+        float max = max(max(color.r, color.g), color.b);
+        float min = min(min(color.r, color.g), color.b);
+        float h, s, l = (max + min) * 0.5;
+    
+        if (max == min) {
+            h = s = 0.0; // achromatic
+        } else {
+            float d = max - min;
+            s = l > 0.5 ? d / (2.0 - max - min) : d / (max + min);
+            if (max == color.r) {
+                h = (color.g - color.b) / d + (color.g < color.b ? 6.0 : 0.0);
+            } else if (max == color.g) {
+                h = (color.b - color.r) / d + 2.0;
+            } else {
+                h = (color.r - color.g) / d + 4.0;
+            }
+            h /= 6.0;
+        }
+    
+        return vec3(h, s, l);
+    }
+    
+    // Функция преобразования из HSL в RGB
+    vec3 hsl2rgb(vec3 color) {
+        float h = color.x;
+        float s = color.y;
+        float l = color.z;
+        float r, g, b;
+    
+        if (s == 0.0) {
+            r = g = b = l; // achromatic
+        } else {
+            float q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
+            float p = 2.0 * l - q;
+            float t[3];
+            t[0] = h + 1.0 / 3.0;
+            t[1] = h;
+            t[2] = h - 1.0 / 3.0;
+    
+            for (int i = 0; i < 3; i++) {
+                if (t[i] < 0.0) t[i] += 1.0;
+                if (t[i] > 1.0) t[i] -= 1.0;
+    
+                if (t[i] < 1.0 / 6.0) {
+                    t[i] = p + (q - p) * 6.0 * t[i];
+                } else if (t[i] < 1.0 / 2.0) {
+                    t[i] = q;
+                } else if (t[i] < 2.0 / 3.0) {
+                    t[i] = p + (q - p) * (2.0 / 3.0 - t[i]) * 6.0;
+                } else {
+                    t[i] = p;
+                }
+            }
+            r = t[0];
+            g = t[1];
+            b = t[2];
+        }
+    
+        return vec3(r, g, b);
+    }
+    
     void main() {
         vec2 uv = vTexCoord.xy;
         vec2 maskUv = uv * vec2(1.0, 0.3333);
@@ -58,34 +121,33 @@ document.addEventListener('DOMContentLoaded', function () {
     
         float maskAlpha1 = smoothstep(0.0, 1.0, maskColor.r);
         float maskAlpha2 = smoothstep(0.0, 1.0, maskColorRight.r);
-
+    
         float maskHighlight = luminance(originalColor);
-
+    
         vec4 color1;
         color1 = multiply(originalColor, targetColor1);
-        
+    
         vec4 color2;
         color2 = multiply(originalColor, targetColor2);
-        
+    
         vec4 finalColor = mix(originalColor, color2, maskAlpha2);
         finalColor = mix(finalColor, color1, maskAlpha1);
-
-
-
-        // Преобразуем maskHighlight в vec4
+    
         vec4 maskHighlightVec = vec4(maskHighlight, maskHighlight, maskHighlight, 1.0);
-
-        // Применяем hardLight к финальному цвету с использованием maskHighlight
         vec4 hardLightColor = hardLight(finalColor, maskHighlightVec);
-
-        // Смешиваем finalColor и hardLightColor с 60% непрозрачностью
         finalColor = mix(finalColor, hardLightColor, 0.3);
-
-        //gl_FragColor = originalColor;
+    
+        // Преобразование finalColor из RGB в HSL
+        vec3 hslColor = rgb2hsl(finalColor.rgb);
+        // Увеличение насыщенности на 30%
+        hslColor.y = clamp(hslColor.y * 1.3, 0.0, 1.0);
+        // Преобразование обратно из HSL в RGB
+        finalColor.rgb = hsl2rgb(hslColor);
+    
         gl_FragColor = finalColor;
     }
-`;
-
+    `;
+    
 
 
 
