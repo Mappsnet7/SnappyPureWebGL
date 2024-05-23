@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
         vec4 maskHighlightVec = vec4(maskHighlight, maskHighlight, maskHighlight, 1.0);
         vec4 hardLightColor = hardLight(finalColor, maskHighlightVec);
-        finalColor = mix(finalColor, hardLightColor, 0.3);
+        finalColor = mix(finalColor, hardLightColor, 0.4);
     
         // Преобразование finalColor из RGB в HSL
         vec3 hslColor = rgb2hsl(finalColor.rgb);
