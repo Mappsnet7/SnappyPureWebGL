@@ -21,7 +21,7 @@
             height: 100vh; 
         }
        
-        #playPauseBtn, #colorPicker1,  #colorPicker2{
+        #playPauseBtn, #colorPicker1, #colorPicker2, #videoSelector {
             position: absolute;
             z-index: 10; 
             top: 10px; 
@@ -30,29 +30,59 @@
         #colorPicker1 {
             right: 10px;
         }
-       
         #colorPicker2 {
             right: 60px;
         }
+        #videoSelector {
+            right: 110px;
+        }
     </style>
-    
 </head>
 <body>
 
 <div class="canvas-container">
     <video id="videoElement" playsinline loop webkit-playsinline muted hidden crossOrigin="anonymous">
-        <source src="DISALBED_Elegant_Reveal_2MB.webm" type="video/webm">
-        <source src="ElegantRevealHigh.mp4" type="video/mp4">
+        <source id="videoSource" src="Elegant_Reveal.mp4" type="video/mp4">
     </video>
 
     <input type="color" id="colorPicker1" value="#3ACAFE"/>
     <input type="color" id="colorPicker2" value="#3876B6"/>
     <button id="playPauseBtn">Play</button>
+    <select id="videoSelector">
+        <option value="Elegant_Reveal.mp4">Elegant Reveal</option>
+        <option value="Mountain_RevealWIP.mp4">Mountain Reveal</option>
+        <option value="Anniversary_RevealWIP.mp4">Anniversary Reveal</option>
+    </select>
 
     <canvas id="webglCanvas" width="1000" height="1000"></canvas>
 </div>
 
 <script src="webgl.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const videoElement = document.getElementById('videoElement');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const videoSelector = document.getElementById('videoSelector');
+        const videoSource = document.getElementById('videoSource');
+        
+
+
+        videoSelector.addEventListener('change', function() {
+            const selectedVideo = videoSelector.value;
+            videoElement.pause();
+            videoSource.src = selectedVideo;
+            videoElement.load();
+            videoElement.play().then(() => {
+                playPauseBtn.textContent = 'Play';
+                setTimeout(() => {
+            videoElement.pause();
+        }, 10);
+            }).catch(error => {
+                console.error('Error playing the video:', error);
+            });
+        });
+    });
+</script>
 
 </body>
 </html>
